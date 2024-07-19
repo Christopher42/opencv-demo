@@ -2,10 +2,10 @@
 <html>
 <head>
 <meta charset="utf-8">
-	<title>Hello OpenCV.js</title>
+	<title>TicTacToe</title>
 </head>
 <body>
-<h2>Hello Opencv.js</h2>
+<h2>TicTacToe</h2>
 <p id="status">OpenCV.js is loading...</p>
 <div>
 <table cellpadding="10" cellspacing="0" width="0" border="0">
@@ -37,6 +37,12 @@ inputElement.addEventListener('change', (e) => {
 }, false);
 
 imgElement.onload = function() {
+	let board = [
+		[0,0,0],
+		[0,0,0],
+		[0,0,0]
+	];
+
 	//kernel and anchor for noise removal
 	let M = cv.Mat.ones(7, 7, cv.CV_8U);
 	let anchor = new cv.Point(-1, -1);
@@ -54,27 +60,80 @@ imgElement.onload = function() {
 	                cv.BORDER_CONSTANT, cv.morphologyDefaultBorderValue());
 
 	//findContours to identify boxes
-	let dst = cv.Mat.zeros(image_height, image_width, cv.CV_8UC3);
+	// let dst = cv.Mat.zeros(image_height, image_width, cv.CV_8UC3);
+	let dst = image_raw.clone();
 	let contours = new cv.MatVector();
 	let hierarchy = new cv.Mat();
 	cv.findContours(image_thresh, contours, hierarchy, cv.RETR_CCOMP, cv.CHAIN_APPROX_SIMPLE);
 
-	//DEBUG: render contours and log sizes
-	let s = "area of cells identified:"
-	// log size and draw contours with random Scalar
+	// //DEBUG: render contours and log sizes
+	// let s = "area of cells identified:"
+	// // log size and draw contours with random Scalar
+	// for (let i = 0; i < contours.size(); ++i) {
+	// 	let cnt = contours.get(i);
+	// 	let area = cv.contourArea(cnt, false);
+	// 	if (area > 16000 || area < 5000){
+	// 		continue;
+	// 	}
+	// 	s = s + " " + area.toString();
+	//     let color = new cv.Scalar(Math.round(Math.random() * 255), Math.round(Math.random() * 255),
+	//                               Math.round(Math.random() * 255));
+	//     cv.drawContours(dst, contours, i, color, 1, cv.LINE_8, hierarchy, 100);
+	// }
+	// document.getElementById('status').innerHTML = s;
+
+	let tileCount = 0;
+	let s = "found:";
 	for (let i = 0; i < contours.size(); ++i) {
 		let cnt = contours.get(i);
 		let area = cv.contourArea(cnt, false);
 		if (area > 16000 || area < 5000){
 			continue;
 		}
-		s = s + " " + area.toString();
-	    let color = new cv.Scalar(Math.round(Math.random() * 255), Math.round(Math.random() * 255),
-	                              Math.round(Math.random() * 255));
-	    cv.drawContours(dst, contours, i, color, 1, cv.LINE_8, hierarchy, 100);
-	}
+		tileCount = tileCount + 1;
 
+	    let rect = cv.boundingRect(cnt);
+	    const trim = 15;
+	    rect.x = rect.x + trim;
+	    rect.y = rect.y + trim;
+	    rect.width = rect.width - trim*2;
+	    rect.height = rect.height - trim*2;
+
+	    // draw bounding rect
+	    let contoursColor = new cv.Scalar(255, 255, 255);
+        let rectangleColor = new cv.Scalar(255, 0, 0);
+        let point1 = new cv.Point(rect.x, rect.y);
+        let point2 = new cv.Point(rect.x + rect.width, rect.y + rect.height);
+        cv.rectangle(dst, point1, point2, rectangleColor, 2, cv.LINE_AA, 0);
+
+        // get tiles
+        let tile = image_thresh.roi(rect);
+        let imgTile = image_raw.roi(rect);
+        const tile_x = Math.round((rect.x/image_width)*3);
+        const tile_y = Math.round((rect.y/image_height)*3);
+        var ss = [' (', tile_x, ',', tile_y, ')'].join('');
+        s = s + ss;
+
+        // let c = new cv.MatVector();
+		// cv.findContours(tile, c, hierarchy, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE);
+		// s = s + " " + len(c);
+		// if (len(c) > 0){
+			// for (let j = 0; j < c.size(); ++j) {
+		// 	// 	let ct = c.get(j);
+		// 	// 	let area = cv.contourArea(ct, false);
+		// 	// 	// if (area > 16000 || area < 5000){
+		// 	// 	// 	continue;
+		// 	// 	// }
+				// s = s + " " + area;
+		// 		continue;
+			// }
+		// }
+		
+
+
+	}
 	document.getElementById('status').innerHTML = s;
+
 	cv.imshow('canvasOutput', dst);
 	image_raw.delete(); image_thresh.delete(); dst.delete(); contours.delete(); hierarchy.delete();	
 };
