@@ -37,9 +37,11 @@ inputElement.addEventListener('change', (e) => {
 }, false);
 
 imgElement.onload = function() {
-	let mat = cv.imread(imgElement);
-	cv.imshow('canvasOutput', mat);
-	mat.delete();
+	let src = cv.imread(imgElement);
+	cv.cvtColor(src, src, cv.COLOR_RGB2GRAY, 0);
+
+	cv.imshow('canvasOutput', src);
+	src.delete();
 };
 
 var Module = {
