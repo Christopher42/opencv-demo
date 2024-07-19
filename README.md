@@ -26,3 +26,4 @@ Using version 4.10.4 of opencv.js obtained from opencv-4.10.0-docs.zip on the of
 
 ## resources for further learning
 - using OpenCV.js <https://docs.opencv.org/3.4/d0/d84/tutorial_js_usage.html>
+- using HoughLinesP for segment detection <https://stackoverflow.com/questions/45322630/how-to-detect-lines-in-opencv>
