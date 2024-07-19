@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+	<title>Borderless detection</title>
+</head>
+<body>
+<h2>Borderless detection</h2>
+<p id="status">OpenCV.js is loading...</p>
+<div>
+<table cellpadding="10" cellspacing="0" width="0" border="0">
+	<tbody>
+		<tr>
+			<td>
+				<img id="canvasInput" height="400" width="400" alt="No Image" />
+			</td>
+			<td>
+				<canvas id="canvasOutput" ></canvas>
+			</td>
+		</tr>
+		<tr>
+			<td>
+				<div class="caption">imageSrc <input type="file" id="fileInput" name="file" /></div>
+			</td>
+			<td>
+				<div class="caption">canvasOutput</div>
+			</td>
+		</tr>
+	</tbody>
+</table>
+</div>
+<script type="text/javascript">
+const imgElement = document.getElementById('canvasInput')
+const inputElement = document.getElementById('fileInput');
+inputElement.addEventListener('change', (e) => {
+	imgElement.src = URL.createObjectURL(e.target.files[0]);
+}, false);
+
+imgElement.onload = function() {
+	//kernel and anchor for noise removal
+	let M = cv.Mat.ones(7, 7, cv.CV_8U);
+	let anchor = new cv.Point(-1, -1);
+
+	//images and sizes
+	let image_raw = cv.imread('canvasInput');
+	let image_thresh = new cv.Mat();
+	const image_height = 400;
+	const image_width = 400;
+
+	//process image
+	cv.cvtColor(image_raw, image_thresh, cv.COLOR_RGBA2GRAY, 0);
+	cv.threshold(image_thresh, image_thresh, 127, 255, cv.THRESH_BINARY);
+	cv.morphologyEx(image_thresh, image_thresh, cv.MORPH_OPEN, M, anchor, 1,
+	                cv.BORDER_CONSTANT, cv.morphologyDefaultBorderValue());
+
+	//findContours to identify boxes
+	// let dst = cv.Mat.zeros(image_height, image_width, cv.CV_8UC3);
+	let dst = image_raw.clone();
+	let contours = new cv.MatVector();
+	let hierarchy = new cv.Mat();
+	cv.findContours(image_thresh, contours, hierarchy, cv.RETR_CCOMP, cv.CHAIN_APPROX_SIMPLE);
+
+	// //DEBUG: render contours and log sizes
+	// let s = "area of cells identified:"
+	// // log size and draw contours with random Scalar
+	// for (let i = 0; i < contours.size(); ++i) {
+	// 	let cnt = contours.get(i);
+	// 	let area = cv.contourArea(cnt, false);
+	// 	if (area > 16000 || area < 5000){
+	// 		continue;
+	// 	}
+	// 	s = s + " " + area.toString();
+	//     let color = new cv.Scalar(Math.round(Math.random() * 255), Math.round(Math.random() * 255),
+	//                               Math.round(Math.random() * 255));
+	//     cv.drawContours(dst, contours, i, color, 1, cv.LINE_8, hierarchy, 100);
+	// }
+	// document.getElementById('status').innerHTML = s;
+
+	let tileCount = 0;
+	let s = "area of items identified:"
+	for (let i = 0; i < contours.size(); ++i) {
+		let cnt = contours.get(i);
+		let area = cv.contourArea(cnt, false);
+		// if (area > 16000 || area < 5000){
+		// 	continue;
+		// }
+		tileCount = tileCount + 1;
+
+	    let rect = cv.boundingRect(cnt);
+	    // if (rect.height/rect.width > 1.5 or rect.width/rect.height > 1.5){
+	    // 	continue;
+	    // }
+	    let aspect_ratio = rect.height/rect.width;
+	    if (aspect_ratio > 1.5 || aspect_ratio < .67){
+	    	continue;
+	    }
+
+	    rect.x = Math.max(rect.x - 15,0);
+	    rect.y = Math.max(rect.y - 15,0);
+	    rect.width = Math.min(rect.width + 30, image_width);
+	    rect.height = Math.min(rect.height + 30,image_height);
+	    let contoursColor = new cv.Scalar(255, 255, 255);
+        let rectangleColor = new cv.Scalar(255, 0, 0);
+        let point1 = new cv.Point(rect.x, rect.y);
+        let point2 = new cv.Point(rect.x + rect.width, rect.y + rect.height);
+        cv.rectangle(dst, point1, point2, rectangleColor, 2, cv.LINE_AA, 0);
+
+        s = s + " " + area.toString();
+	}
+	document.getElementById('status').innerHTML = s;
+
+	cv.imshow('canvasOutput', dst);
+	image_raw.delete(); image_thresh.delete(); dst.delete(); contours.delete(); hierarchy.delete();	
+};
+
+var Module = {
+	// https://emscripten.org/docs/api_reference/module.html#Module.onRuntimeInitialized
+	onRuntimeInitialized() {
+	document.getElementById('status').innerHTML = 'OpenCV.js is ready.';
+	}
+};
+</script>
+<script async src="opencv.js" type="text/javascript"></script>
+</body>
+</html>
