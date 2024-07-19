@@ -8,18 +8,30 @@
 <h2>Hello Opencv.js</h2>
 <p id="status">OpenCV.js is loading...</p>
 <div>
-	<div class="inputoutput">
-		<img id="imageSrc" alt="No Image" />
-		<div class="caption">imageSrc <input type="file" id="fileInput" name="file" /></div>
-	</div>
-	<div class="inputoutput">
- 		<canvas id="canvasOutput" ></canvas>
- 		<div class="caption">canvasOutput</div>
- 	</div>
+<table cellpadding="10" cellspacing="0" width="0" border="0">
+	<tbody>
+		<tr>
+			<td>
+				<img id="imageSrc" alt="No Image" />
+			</td>
+			<td>
+				<canvas id="canvasOutput" ></canvas>
+			</td>
+		</tr>
+		<tr>
+			<td>
+				<div class="caption">imageSrc <input type="file" id="fileInput" name="file" /></div>
+			</td>
+			<td>
+				<div class="caption">canvasOutput</div>
+			</td>
+		</tr>
+	</tbody>
+</table>
 </div>
 <script type="text/javascript">
-let imgElement = document.getElementById('imageSrc')
-let inputElement = document.getElementById('fileInput');
+const imgElement = document.getElementById('imageSrc')
+const inputElement = document.getElementById('fileInput');
 inputElement.addEventListener('change', (e) => {
 	imgElement.src = URL.createObjectURL(e.target.files[0]);
 }, false);
