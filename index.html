@@ -12,7 +12,7 @@
 	<tbody>
 		<tr>
 			<td>
-				<img id="imageSrc" alt="No Image" />
+				<img id="canvasInput" height="400" width="400" alt="No Image" />
 			</td>
 			<td>
 				<canvas id="canvasOutput" ></canvas>
@@ -30,18 +30,46 @@
 </table>
 </div>
 <script type="text/javascript">
-const imgElement = document.getElementById('imageSrc')
+const imgElement = document.getElementById('canvasInput')
 const inputElement = document.getElementById('fileInput');
 inputElement.addEventListener('change', (e) => {
 	imgElement.src = URL.createObjectURL(e.target.files[0]);
 }, false);
 
 imgElement.onload = function() {
-	let src = cv.imread(imgElement);
-	cv.cvtColor(src, src, cv.COLOR_RGB2GRAY, 0);
+	let src = cv.imread('canvasInput');
+	let dsize = new cv.Size(400, 400);
+	cv.resize(src, src, dsize, 0, 0, cv.INTER_AREA);
+	cv.cvtColor(src, src, cv.COLOR_RGBA2GRAY, 0);
+	cv.threshold(src, src, 127, 255, cv.THRESH_BINARY);
+	let M = cv.Mat.ones(7, 7, cv.CV_8U);
+	let anchor = new cv.Point(-1, -1);
+	// You can try more different parameters
+	cv.morphologyEx(src, src, cv.MORPH_OPEN, M, anchor, 1,
+	                cv.BORDER_CONSTANT, cv.morphologyDefaultBorderValue());
 
-	cv.imshow('canvasOutput', src);
-	src.delete();
+	let dst = cv.Mat.zeros(src.rows, src.cols, cv.CV_8UC3);
+	let contours = new cv.MatVector();
+	let hierarchy = new cv.Mat();
+	// You can try more different parameters
+	cv.findContours(src, contours, hierarchy, cv.RETR_CCOMP, cv.CHAIN_APPROX_SIMPLE);
+	// print area of largest contour
+	let s = ""
+	// draw contours with random Scalar
+	for (let i = 0; i < contours.size(); ++i) {
+		let cnt = contours.get(i);
+		let area = cv.contourArea(cnt, false);
+		if (area > 16000 || area < 5000){
+			continue;
+		}
+		s = s + area.toString() + " ";
+	    let color = new cv.Scalar(Math.round(Math.random() * 255), Math.round(Math.random() * 255),
+	                              Math.round(Math.random() * 255));
+	    cv.drawContours(dst, contours, i, color, 1, cv.LINE_8, hierarchy, 100);
+	}
+	document.getElementById('status').innerHTML = s;
+	cv.imshow('canvasOutput', dst);
+	src.delete(); dst.delete(); contours.delete(); hierarchy.delete();	
 };
 
 var Module = {
